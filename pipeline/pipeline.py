@@ -6,6 +6,7 @@ from pipeline.metadata import (start_pipeline_run,
     finish_pipeline_run_failed,
     get_last_successful_watermark
 )
+from pipeline.extract import get_source_file_path
 
 
 logger = get_logger("pipeline.run")
@@ -24,6 +25,7 @@ def run_pipeline() -> None:
         run_id = start_pipeline_run(engine, pipeline_name)
         set_run_id(run_id)
         last_watermark = get_last_successful_watermark(engine, pipeline_name)
+        source_file = get_source_file_path()
 
         finish_pipeline_run_success(
             engine=engine,

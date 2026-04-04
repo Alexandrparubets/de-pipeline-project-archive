@@ -23,5 +23,10 @@ class Settings:
     mart_table: str = os.getenv("MART_TABLE", "sales_daily")
     pipeline_runs_table: str = os.getenv("PIPELINE_RUNS_TABLE", "pipeline_runs")
 
+    source_file: str = os.getenv(
+    "SOURCE_FILE",
+    "data/source/online_retail.xlsx",
+)
+
 
 settings = Settings()
