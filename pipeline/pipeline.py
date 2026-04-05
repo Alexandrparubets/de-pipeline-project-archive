@@ -31,16 +31,18 @@ def run_pipeline() -> None:
         last_watermark = get_last_successful_watermark(engine, pipeline_name)
         source_file = get_source_file_path()
         raw_file_path, file_hash = create_raw_copy(source_file, pipeline_name)
-        df = load_raw_to_dataframe(raw_file_path)
-        df = clean_dataframe(df)
+        df = load_raw_to_dataframe(raw_file_path, last_loaded_date = last_watermark)
+        df, watermark_value = clean_dataframe(df)
         df = align_to_stg_columns(df)
-        loaded_rows = load_to_stg(df, engine)
+        rows_in_stg = load_to_stg(df, engine)
         run_quality_checks(engine)
         
 
         finish_pipeline_run_success(
             engine=engine,
             run_id=run_id,
+            rows_in_stg=rows_in_stg,
+            watermark_value=watermark_value,
         )
         logger.info("✅ Pipeline finished")
 

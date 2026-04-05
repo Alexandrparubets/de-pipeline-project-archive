@@ -8,7 +8,7 @@ from pipeline.logger_config import get_logger
 logger = get_logger("pipeline.transform")
 
 
-def load_raw_to_dataframe(raw_file_path: Path) -> pd.DataFrame:
+def load_raw_to_dataframe(raw_file_path: Path, last_loaded_date=None) -> pd.DataFrame:
     """
     Reads RAW Excel file into pandas DataFrame,
     validates that it is not empty,
@@ -26,6 +26,17 @@ def load_raw_to_dataframe(raw_file_path: Path) -> pd.DataFrame:
     if df.empty:
         logger.error(f"RAW file is empty: '{raw_file_path}'")
         raise ValueError(f"RAW file is empty: {raw_file_path}")
+    
+    logger.info(f"Initial rows loaded from RAW: {len(df)}")
+
+    df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"])
+
+    if last_loaded_date is None:
+        logger.info("No watermark found. Full RAW file will be loaded.")
+    else:
+        logger.info(f"Applying watermark filter: InvoiceDate >= {last_loaded_date}")
+        df = df[df["InvoiceDate"] >= last_loaded_date].copy()
+        logger.info(f"Rows after watermark filter: {len(df)}")
 
     df.columns = normalize_column_names(df.columns)
 
@@ -84,7 +95,10 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         f"DataFrame cleaning finished: rows_before={initial_rows}, rows_after={final_rows}"
     )
 
-    return df
+    watermark_value =  df["invoicedate"].max()
+    logger.info(f"New watermark calculated: {watermark_value}")
+
+    return df, watermark_value
 
 
 def remove_cancelled_orders(df: pd.DataFrame) -> pd.DataFrame:
