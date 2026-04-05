@@ -10,6 +10,7 @@ from pipeline.extract import get_source_file_path
 from pipeline.raw import create_raw_copy
 from pipeline.transform import load_raw_to_dataframe, clean_dataframe
 from pipeline.load_stg import load_to_stg, align_to_stg_columns
+from pipeline.quality import run_quality_checks
 
 
 logger = get_logger("pipeline.run")
@@ -34,6 +35,7 @@ def run_pipeline() -> None:
         df = clean_dataframe(df)
         df = align_to_stg_columns(df)
         loaded_rows = load_to_stg(df, engine)
+        run_quality_checks(engine)
         
 
         finish_pipeline_run_success(
