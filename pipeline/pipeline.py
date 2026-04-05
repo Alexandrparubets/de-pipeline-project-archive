@@ -12,6 +12,7 @@ from pipeline.transform import load_raw_to_dataframe, clean_dataframe
 from pipeline.load_stg import load_to_stg, align_to_stg_columns
 from pipeline.quality import run_quality_checks
 from pipeline.load_dwh import load_stg_to_dwh
+from pipeline.load_mart import load_data_mart
 
 
 logger = get_logger("pipeline.run")
@@ -41,6 +42,7 @@ def run_pipeline() -> None:
         attempted_rows = dwh_stats["attempted_rows"]
         inserted_rows = dwh_stats["inserted_rows"]
         skipped_rows = dwh_stats["skipped_rows"]
+        mart_rows = load_data_mart(engine)
         
 
         finish_pipeline_run_success(
