@@ -33,7 +33,10 @@ def load_raw_to_dataframe(engine, pipeline_name, raw_file_path: Path, last_water
     df.columns = normalize_column_names(df.columns)
     
     last_historical_hash = get_last_successful_historical_hash(engine, pipeline_name)
-    historical_hash, new_boundary_date = calculate_historical_hash(df, boundary_date)
+    logger.info(f"last_historical_hash: {last_historical_hash}")
+    historical_hash, new_boundary_date, new_historical_hash = calculate_historical_hash(df, boundary_date)
+    logger.info(f"historical_hash: {historical_hash}")
+    logger.info(f"new_historical_hash: {new_historical_hash}")
 
     if (historical_hash is not None
         and historical_hash != last_historical_hash
@@ -43,8 +46,7 @@ def load_raw_to_dataframe(engine, pipeline_name, raw_file_path: Path, last_water
         logger.warning(
             "Historical source data has changed compared to the last successful run."
         )
-    
-
+   
     logger.info(f"Initial rows loaded from RAW: {len(df)}")
 
     if last_watermark is None:
@@ -55,7 +57,7 @@ def load_raw_to_dataframe(engine, pipeline_name, raw_file_path: Path, last_water
         logger.info(f"Rows after watermark filter: {len(df)}")
         if df.empty:
             logger.info("No new rows found after watermark filter.")
-            return df, historical_hash, new_boundary_date
+            return df, new_historical_hash, new_boundary_date
 
     
 
@@ -65,7 +67,7 @@ def load_raw_to_dataframe(engine, pipeline_name, raw_file_path: Path, last_water
     )
     logger.info(f"Normalized columns: {list(df.columns)}")
 
-    return df, historical_hash, new_boundary_date
+    return df, new_historical_hash, new_boundary_date
 
 
 def normalize_column_names(columns) -> list[str]:
@@ -270,6 +272,8 @@ def calculate_historical_hash(df: pd.DataFrame, boundary_date) -> str | None:
     historical_df = df[df["invoicedate"] < boundary_date].copy()
     
     new_boundary_date = df["invoicedate"].max()
+    new_historical_df = df[df["invoicedate"] < new_boundary_date].copy()
+
     logger.info(f"historical_hash -> new boundary_date: {new_boundary_date}")
 
     if historical_df.empty:
@@ -279,7 +283,14 @@ def calculate_historical_hash(df: pd.DataFrame, boundary_date) -> str | None:
         by=list(historical_df.columns)
     ).fillna("")
 
+    new_historical_df = new_historical_df.sort_values(
+        by=list(new_historical_df.columns)
+    ).fillna("")
+
     payload = historical_df.to_csv(index=False)
     historical_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
-    return historical_hash, new_boundary_date
+    new_payload = new_historical_df.to_csv(index=False)
+    new_historical_hash = hashlib.sha256(new_payload.encode("utf-8")).hexdigest()
+
+    return historical_hash, new_boundary_date, new_historical_hash

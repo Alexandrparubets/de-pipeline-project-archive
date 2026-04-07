@@ -33,7 +33,7 @@ def run_pipeline() -> None:
         last_watermark, boundary_date = get_last_successful_watermark(engine, pipeline_name)
         source_file = get_source_file_path()
         raw_file_path, file_hash = create_raw_copy(source_file, pipeline_name)
-        df, historical_hash, new_boundary_date = load_raw_to_dataframe(engine, pipeline_name, raw_file_path, last_watermark, boundary_date)
+        df, new_historical_hash, new_boundary_date = load_raw_to_dataframe(engine, pipeline_name, raw_file_path, last_watermark, boundary_date)
 
        
 
@@ -44,7 +44,7 @@ def run_pipeline() -> None:
                 rows_in_stg=0,
                 watermark_value=last_watermark,
                 boundary_date = new_boundary_date,
-                historical_hash=historical_hash,
+                historical_hash=new_historical_hash,
                 rows_loaded_to_dwh=0,
                 rows_skipped_in_dwh=0,
             )
@@ -67,7 +67,7 @@ def run_pipeline() -> None:
             rows_in_stg=rows_in_stg,
             watermark_value=watermark_value,
             boundary_date = new_boundary_date,
-            historical_hash=historical_hash,
+            historical_hash=new_historical_hash,
             rows_loaded_to_dwh=inserted_rows,
             rows_skipped_in_dwh=skipped_rows,
         )
